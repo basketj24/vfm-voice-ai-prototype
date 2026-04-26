@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VFM DCC Voice AI Pilot — Phase 1 Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --text: #1a202c;
+  --text-secondary: #64748b;
+  --primary: #2563eb;
+  --primary-light: #dbeafe;
+  --accent: #0d9488;
+  --accent-light: #ccfbf1;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --purple: #8b5cf6;
+  --purple-light: #ede9fe;
+  --sidebar-width: 240px;
+  --header-height: 56px;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+/* Layout */
+.app { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background: #0f172a;
+  color: #e2e8f0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-logo .logo-icon {
+  width: 32px; height: 32px;
+  background: var(--primary);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: white;
+}
+.sidebar-logo .logo-text {
+  font-size: 14px; font-weight: 600; color: white;
+  line-height: 1.2;
+}
+.sidebar-logo .logo-text small {
+  font-size: 11px; font-weight: 400; color: #94a3b8; display: block;
+}
+.sidebar-nav { padding: 12px 0; flex: 1; }
+.sidebar-section { padding: 8px 20px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600; }
+.sidebar-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 20px;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+}
+.sidebar-item:hover { color: #e2e8f0; background: rgba(255,255,255,0.04); }
+.sidebar-item.active { color: white; background: rgba(37,99,235,0.15); border-left-color: var(--primary); }
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-item .badge {
+  margin-left: auto; background: var(--danger); color: white; font-size: 10px;
+  padding: 1px 6px; border-radius: 10px; font-weight: 600;
+}
+
+/* Main */
+.main { flex: 1; margin-left: var(--sidebar-width); }
+
+/* Header */
+.header {
+  height: var(--header-height);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-left h1 { font-size: 16px; font-weight: 600; }
+.header-left .status-badge {
+  font-size: 11px; padding: 2px 10px; border-radius: 12px;
+  background: var(--success-light); color: #065f46; font-weight: 500;
+}
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-right .last-updated { font-size: 12px; color: var(--text-secondary); }
+.btn {
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+.btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+/* Content */
+.content { padding: 24px; }
+
+/* Filters */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  align-items: center;
+}
+.filter-bar label { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-right: -4px; }
+.filter-bar select, .filter-bar input[type="date"] {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  color: var(--text);
+  cursor: pointer;
+}
+.filter-bar select:focus, .filter-bar input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+.filter-divider { width: 1px; height: 28px; background: var(--border); }
+
+/* Cards & Grid */
+.grid { display: grid; gap: 20px; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-2-1 { grid-template-columns: 2fr 1fr; }
+.grid-1-1 { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1200px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-header h3 { font-size: 13px; font-weight: 600; }
+.card-header .subtitle { font-size: 11px; color: var(--text-secondary); }
+.card-body { padding: 18px; }
+.card-body.compact { padding: 14px; }
+
+/* Stat cards */
+.stat-card { padding: 18px; }
+.stat-card .stat-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.stat-card .stat-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+.stat-card .stat-change { font-size: 12px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+.stat-card .stat-change.up { color: var(--danger); }
+.stat-card .stat-change.down { color: var(--success); }
+.stat-card .stat-change.neutral { color: var(--text-secondary); }
+.stat-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 10px;
+}
+
+/* Tables */
+.table-wrapper { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 14px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); background: #f8fafc; border-bottom: 1px solid var(--border); }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8fafc; }
+
+/* Tags */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.tag-blue { background: var(--primary-light); color: #1e40af; }
+.tag-green { background: var(--success-light); color: #065f46; }
+.tag-yellow { background: var(--warning-light); color: #92400e; }
+.tag-red { background: var(--danger-light); color: #991b1b; }
+.tag-purple { background: var(--purple-light); color: #6d28d9; }
+.tag-gray { background: #f1f5f9; color: #475569; }
+
+/* Severity */
+.severity {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 500;
+}
+.severity-dot { width: 8px; height: 8px; border-radius: 50%; }
+.severity-high .severity-dot { background: var(--danger); }
+.severity-medium .severity-dot { background: var(--warning); }
+.severity-low .severity-dot { background: var(--success); }
+.severity-high { color: var(--danger); }
+.severity-medium { color: var(--warning); }
+.severity-low { color: var(--success); }
+
+/* Progress bars */
+.progress-bar {
+  height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%; border-radius: 3px; transition: width 0.3s;
+}
+
+/* Alert items */
+.alert-item {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.alert-item:last-child { border-bottom: none; }
+.alert-item:hover { background: #f8fafc; }
+.alert-item .alert-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.alert-item .alert-title { font-weight: 600; font-size: 13px; flex: 1; }
+.alert-item .alert-time { font-size: 11px; color: var(--text-secondary); }
+.alert-item .alert-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.alert-item .alert-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.alert-item.unread { border-left: 3px solid var(--primary); }
+
+/* Heatmap */
+.heatmap-cell {
+  padding: 6px 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+/* Chart containers */
+.chart-container { position: relative; width: 100%; }
+.chart-container canvas { width: 100% !important; }
+
+/* Journey stage pills */
+.journey-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
+}
+.journey-initiation { background: #dbeafe; color: #1e40af; }
+.journey-pre-initiation { background: #ede9fe; color: #6d28d9; }
+.journey-reimbursement { background: #fef3c7; color: #92400e; }
+.journey-starting-therapy { background: #d1fae5; color: #065f46; }
+
+/* Screen visibility */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* Enrollment segment toggle */
+.segment-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.segment-toggle button {
+  padding: 5px 12px;
+  font-size: 12px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.segment-toggle button.active {
+  background: var(--primary);
+  color: white;
+}
+.segment-toggle button:not(:last-child) { border-right: 1px solid var(--border); }
+
+/* Detail modal overlay */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px;
+  overflow-y: auto;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 900px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 10;
+  border-radius: 12px 12px 0 0;
+}
+.modal-header h2 { font-size: 16px; font-weight: 600; }
+.modal-close {
+  width: 32px; height: 32px;
+  border: none; background: #f1f5f9; border-radius: 6px;
+  cursor: pointer; font-size: 18px; display: flex;
+  align-items: center; justify-content: center; color: var(--text-secondary);
+}
+.modal-close:hover { background: #e2e8f0; }
+.modal-body { padding: 24px; }
+
+/* Misc */
+.text-muted { color: var(--text-secondary); }
+.text-sm { font-size: 12px; }
+.text-xs { font-size: 11px; }
+.font-semibold { font-weight: 600; }
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.mb-2 { margin-bottom: 8px; }
+.mt-4 { margin-top: 16px; }
+.gap-20 { gap: 20px; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+
+/* Evidence box */
+.evidence-box {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 6px 6px 0;
+  padding: 12px 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #475569;
+  margin: 8px 0;
+}
+.evidence-box .evidence-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Trend sparkline inline */
+.inline-trend { display: inline-flex; align-items: center; gap: 4px; }
+.trend-arrow { font-size: 14px; }
+.trend-up { color: var(--danger); }
+.trend-down { color: var(--success); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Financial program cards */
+.fin-program-card {
+  border-left: 4px solid var(--primary);
+  padding: 16px;
+}
+.fin-program-card.copay { border-left-color: #2563eb; }
+.fin-program-card.voucher { border-left-color: #8b5cf6; }
+.fin-program-card.interim { border-left-color: #f59e0b; }
+.fin-program-card.oop { border-left-color: #0d9488; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">V</div>
+      <div class="logo-text">VFM Voice AI<small>Phase 1 Pilot</small></div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="sidebar-section">Dashboards</div>
+      <div class="sidebar-item active" data-screen="dashboard" onclick="switchScreen('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Program Overview
+      </div>
+      <div class="sidebar-item" data-screen="alerts" onclick="switchScreen('alerts')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Issue Alerts
+        <span class="badge">4</span>
+      </div>
+      <div class="sidebar-section">Analysis</div>
+      <div class="sidebar-item" data-screen="payer" onclick="switchScreen('payer')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        Payer Intelligence
+      </div>
+      <div class="sidebar-item" data-screen="financial" onclick="switchScreen('financial')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+        Financial Programs
+      </div>
+      <div class="sidebar-section">Data</div>
+      <div class="sidebar-item" data-screen="themes" onclick="switchScreen('themes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>
+        Theme Detail
+      </div>
+    </div>
+    <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: #64748b;">
+      Prototype v1.0<br>Phase 1 — Q3 2026
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <h1 id="page-title">Program Insight Dashboard</h1>
+        <span class="status-badge">Pilot Active</span>
+      </div>
+      <div class="header-right">
+        <span class="last-updated">Data through: Apr 25, 2026 11:42 AM</span>
+        <button class="btn" onclick="alert('Export would generate a formatted PDF/PPTX leadership report with current filters applied.')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== SCREEN 1: PROGRAM INSIGHT DASHBOARD ==================== -->
+    <div id="screen-dashboard" class="screen active">
+      <div class="content">
+        <!-- Filters -->
+        <div class="filter-bar">
+          <label>Period</label>
+          <select id="filter-period">
+            <option>Last 7 Days</option>
+            <option selected>Last 30 Days</option>
+            <option>Last 90 Days</option>
+            <option>Custom</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Journey Stage</label>
+          <select id="filter-journey">
+            <option value="all">All Stages</option>
+            <option>Program Initiation</option>
+            <option>Pre-Initiation Support</option>
+            <option>Reimbursement Support</option>
+            <option>Starting Therapy</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Payer</label>
+          <select id="filter-payer">
+            <option value="all">All Payers</option>
+            <option>Aetna</option>
+            <option>Cigna</option>
+            <option>UnitedHealthcare</option>
+            <option>Blue Cross Blue Shield</option>
+            <option>Humana</option>
+            <option>CVS Caremark</option>
+            <option>Express Scripts</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Direction</label>
+          <select id="filter-direction">
+            <option value="all">All Calls</option>
+            <option>Inbound</option>
+            <option>Outbound</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Audience</label>
+          <select id="filter-audience">
+            <option value="all">All</option>
+            <option>Patient/Caregiver</option>
+            <option>HCP/Office Staff</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Enrollment</label>
+          <div class="segment-toggle">
+            <button class="active" onclick="toggleSegment(this)">All</button>
+            <button onclick="toggleSegment(this)">Enrolled</button>
+            <button onclick="toggleSegment(this)">Non-Enrolled</button>
+          </div>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="grid grid-4 mb-6">
+          <div class="card stat-card">
+            <div class="stat-icon" style="background: var(--primary-light);">&#128202;</div>
+            <div class="stat-label">Interactions Analyzed</div>
+            <div class="stat-value">2,847</div>
+            <div class="stat-change up"><span class="trend-arrow">&#9650;</span> 12% vs prior period</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon" style="background: var(--success-light);">&#9201;</div>
+            <div class="stat-label">Avg Time to Insight</div>
+            <div class="stat-value">18h</div>
+            <div class="stat-change down"><span class="trend-arrow">&#9660;</span> from 22h last period</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon" style="background: var(--warning-light);">&#128269;</div>
+            <div class="stat-label">Coverage Rate</div>
+            <div class="stat-value">93.2%</div>
+            <div class="stat-change neutral">Target: ≥90%</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon" style="background: var(--purple-light);">&#9889;</div>
+            <div class="stat-label">Actionable Insights</div>
+            <div class="stat-value">38</div>
+            <div class="stat-change neutral">54% actioned (target: >50%)</div>
+          </div>
+        </div>
+
+        <!-- Enrollment segment cards -->
+        <div class="grid grid-2 mb-6">
+          <div class="card">
+            <div class="card-body compact" style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 48px; height: 48px; border-radius: 10px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">&#128100;</div>
+              <div style="flex: 1;">
+                <div class="text-sm font-semibold mb-2">Enrolled PSP Interactions</div>
+                <div style="display: flex; align-items: baseline; gap: 10px;">
+                  <span style="font-size: 24px; font-weight: 700;">2,412</span>
+                  <span class="text-sm text-muted">84.7% of total | Coverage: 94.1%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body compact" style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 48px; height: 48px; border-radius: 10px; background: var(--warning-light); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">&#128101;</div>
+              <div style="flex: 1;">
+                <div class="text-sm font-semibold mb-2">"Request a DCC" (Non-Enrolled)</div>
+                <div style="display: flex; align-items: baseline; gap: 10px;">
+                  <span style="font-size: 24px; font-weight: 700;">435</span>
+                  <span class="text-sm text-muted">15.3% of total | Coverage: 89.7% | <span style="color: var(--danger);">&#9650; 22% vs prior</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trend chart + top issues -->
+        <div class="grid grid-2-1 mb-6">
+          <div class="card">
+            <div class="card-header">
+              <h3>Issue Trends (Last 30 Days)</h3>
+              <span class="text-xs text-muted">By journey stage</span>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 280px;"><canvas id="trendChart"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Top Issues Today</h3>
+              <span class="text-xs text-muted">Apr 25</span>
+            </div>
+            <div class="card-body compact" style="padding: 0;">
+              <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
+                <span class="severity severity-high"><span class="severity-dot"></span></span>
+                <span style="font-size: 13px; font-weight: 500; flex: 1;">PA denial spike — Cigna</span>
+                <span class="tag tag-yellow">Reimbursement</span>
+              </div>
+              <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
+                <span class="severity severity-high"><span class="severity-dot"></span></span>
+                <span style="font-size: 13px; font-weight: 500; flex: 1;">At-home testing confusion (RI)</span>
+                <span class="tag tag-purple">Pre-Initiation</span>
+              </div>
+              <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
+                <span class="severity severity-medium"><span class="severity-dot"></span></span>
+                <span style="font-size: 13px; font-weight: 500; flex: 1;">Copay card activation failures</span>
+                <span class="tag tag-green">Starting Therapy</span>
+              </div>
+              <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
+                <span class="severity severity-medium"><span class="severity-dot"></span></span>
+                <span style="font-size: 13px; font-weight: 500; flex: 1;">SP shipment delays (Northeast)</span>
+                <span class="tag tag-green">Starting Therapy</span>
+              </div>
+              <div style="padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
+                <span class="severity severity-low"><span class="severity-dot"></span></span>
+                <span style="font-size: 13px; font-weight: 500; flex: 1;">Enrollment form e-prescribe errors</span>
+                <span class="tag tag-blue">Initiation</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Journey Stage Breakdown -->
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3>Issues by Patient Journey Stage</h3>
+            <span class="text-xs text-muted">Last 30 days — all enrollment statuses</span>
+          </div>
+          <div class="card-body">
+            <div class="grid grid-4">
+              <div style="text-align: center; padding: 16px;">
+                <div class="journey-pill journey-initiation" style="margin-bottom: 12px;">Program Initiation</div>
+                <div style="font-size: 32px; font-weight: 700; color: #1e40af;">312</div>
+                <div class="text-sm text-muted">issues detected</div>
+                <div style="margin-top: 8px;">
+                  <div class="progress-bar"><div class="fill" style="width: 22%; background: #3b82f6;"></div></div>
+                </div>
+                <div class="text-xs text-muted" style="margin-top: 6px;">Top: Missing enrollment info (47%)</div>
+              </div>
+              <div style="text-align: center; padding: 16px;">
+                <div class="journey-pill journey-pre-initiation" style="margin-bottom: 12px;">Pre-Initiation Support</div>
+                <div style="font-size: 32px; font-weight: 700; color: #6d28d9;">428</div>
+                <div class="text-sm text-muted">issues detected</div>
+                <div style="margin-top: 8px;">
+                  <div class="progress-bar"><div class="fill" style="width: 30%; background: #8b5cf6;"></div></div>
+                </div>
+                <div class="text-xs text-muted" style="margin-top: 6px;">Top: At-home testing scheduling (39%)</div>
+              </div>
+              <div style="text-align: center; padding: 16px;">
+                <div class="journey-pill journey-reimbursement" style="margin-bottom: 12px;">Reimbursement Support</div>
+                <div style="font-size: 32px; font-weight: 700; color: #92400e;">523</div>
+                <div class="text-sm text-muted">issues detected</div>
+                <div style="margin-top: 8px;">
+                  <div class="progress-bar"><div class="fill" style="width: 37%; background: #f59e0b;"></div></div>
+                </div>
+                <div class="text-xs text-muted" style="margin-top: 6px;">Top: PA requirement questions (42%)</div>
+              </div>
+              <div style="text-align: center; padding: 16px;">
+                <div class="journey-pill journey-starting-therapy" style="margin-bottom: 12px;">Starting Therapy</div>
+                <div style="font-size: 32px; font-weight: 700; color: #065f46;">164</div>
+                <div class="text-sm text-muted">issues detected</div>
+                <div style="margin-top: 8px;">
+                  <div class="progress-bar"><div class="fill" style="width: 11%; background: #10b981;"></div></div>
+                </div>
+                <div class="text-xs text-muted" style="margin-top: 6px;">Top: Copay card activation (51%)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keyword highlights + Audience split -->
+        <div class="grid grid-1-1 mb-6">
+          <div class="card">
+            <div class="card-header">
+              <h3>Trending Keywords</h3>
+              <span class="text-xs text-muted">Frequency vs. 30-day avg</span>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 260px;"><canvas id="keywordChart"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Audience Type Split</h3>
+              <span class="text-xs text-muted">Patient vs HCP interactions</span>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 260px;"><canvas id="audienceChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payer snapshot -->
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3>Payer Issue Snapshot</h3>
+            <button class="btn btn-sm" onclick="switchScreen('payer')">View Full Payer Intelligence &rarr;</button>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Payer</th>
+                    <th>Issues (30d)</th>
+                    <th>Rate /100 calls</th>
+                    <th>Top Issue</th>
+                    <th>Trend</th>
+                    <th>Severity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-weight: 600;">Cigna</td>
+                    <td>142</td>
+                    <td>18.3</td>
+                    <td>PA denial — new step therapy requirement</td>
+                    <td><span class="inline-trend trend-up">&#9650; 41%</span></td>
+                    <td><span class="severity severity-high"><span class="severity-dot"></span> High</span></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600;">UnitedHealthcare</td>
+                    <td>118</td>
+                    <td>14.7</td>
+                    <td>BV processing delays (>10 business days)</td>
+                    <td><span class="inline-trend trend-up">&#9650; 18%</span></td>
+                    <td><span class="severity severity-medium"><span class="severity-dot"></span> Medium</span></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600;">Aetna</td>
+                    <td>89</td>
+                    <td>11.2</td>
+                    <td>PA criteria documentation confusion</td>
+                    <td><span class="inline-trend" style="color: var(--text-secondary);">&#8212; Flat</span></td>
+                    <td><span class="severity severity-medium"><span class="severity-dot"></span> Medium</span></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600;">BCBS (various)</td>
+                    <td>97</td>
+                    <td>12.1</td>
+                    <td>Plan-level variation in PA requirements</td>
+                    <td><span class="inline-trend trend-up">&#9650; 8%</span></td>
+                    <td><span class="severity severity-medium"><span class="severity-dot"></span> Medium</span></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600;">Humana</td>
+                    <td>43</td>
+                    <td>8.6</td>
+                    <td>SP coordination delays</td>
+                    <td><span class="inline-trend trend-down">&#9660; 12%</span></td>
+                    <td><span class="severity severity-low"><span class="severity-dot"></span> Low</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 2: THEME / ISSUE DETAIL ==================== -->
+    <div id="screen-themes" class="screen">
+      <div class="content">
+        <div class="filter-bar">
+          <label>Journey Stage</label>
+          <select>
+            <option value="all">All Stages</option>
+            <option>Program Initiation</option>
+            <option>Pre-Initiation Support</option>
+            <option selected>Reimbursement Support</option>
+            <option>Starting Therapy</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Category</label>
+          <select>
+            <option value="all">All Categories</option>
+            <option selected>Prior Authorization</option>
+            <option>Denials &amp; Appeals</option>
+            <option>Benefits &amp; Coverage</option>
+            <option>Enrollment &amp; Initiation</option>
+            <option>Pre-Initiation Testing</option>
+            <option>Financial Programs</option>
+            <option>Specialty Pharmacy</option>
+            <option>Access Barriers</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Confidence</label>
+          <select>
+            <option>All</option>
+            <option selected>High (≥80%)</option>
+            <option>Medium (60-80%)</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Enrollment</label>
+          <div class="segment-toggle">
+            <button class="active" onclick="toggleSegment(this)">All</button>
+            <button onclick="toggleSegment(this)">Enrolled</button>
+            <button onclick="toggleSegment(this)">Non-Enrolled</button>
+          </div>
+        </div>
+
+        <!-- Theme list -->
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3>Detected Themes — Reimbursement Support</h3>
+            <span class="text-xs text-muted">8 themes, 523 issues (last 30 days)</span>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Theme</th>
+                  <th>Frequency</th>
+                  <th>Trend</th>
+                  <th>Top Payer</th>
+                  <th>Audience</th>
+                  <th>Enrollment</th>
+                  <th>Confidence</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr onclick="openThemeDetail('pa-requirements')" style="cursor:pointer;">
+                  <td><span class="font-semibold">PA requirement questions</span><br><span class="text-xs text-muted">Step therapy, documentation criteria, timelines</span></td>
+                  <td><span style="font-weight:700;">219</span> <span class="text-xs text-muted">(42%)</span></td>
+                  <td><span class="inline-trend trend-up">&#9650; 28%</span></td>
+                  <td>Cigna (38%)</td>
+                  <td><span class="tag tag-gray">67% HCP</span></td>
+                  <td><span class="tag tag-blue">91% Enrolled</span></td>
+                  <td>
+                    <div class="progress-bar" style="width: 60px; display: inline-block; vertical-align: middle;"><div class="fill" style="width: 92%; background: var(--success);"></div></div>
+                    <span class="text-xs" style="margin-left: 4px;">92%</span>
+                  </td>
+                  <td><span class="text-muted" style="font-size:16px;">&#8250;</span></td>
+                </tr>
+                <tr onclick="openThemeDetail('pa-denials')" style="cursor:pointer;">
+                  <td><span class="font-semibold">PA denial patterns</span><br><span class="text-xs text-muted">Denial reasons, step therapy failures, appeal guidance</span></td>
+                  <td><span style="font-weight:700;">127</span> <span class="text-xs text-muted">(24%)</span></td>
+                  <td><span class="inline-trend trend-up">&#9650; 41%</span></td>
+                  <td>Cigna (44%)</td>
+                  <td><span class="tag tag-gray">58% HCP</span></td>
+                  <td><span class="tag tag-blue">95% Enrolled</span></td>
+                  <td>
+                    <div class="progress-bar" style="width: 60px; display: inline-block; vertical-align: middle;"><div class="fill" style="width: 89%; background: var(--success);"></div></div>
+                    <span class="text-xs" style="margin-left: 4px;">89%</span>
+                  </td>
+                  <td><span class="text-muted" style="font-size:16px;">&#8250;</span></td>
+                </tr>
+                <tr style="cursor:pointer;">
+                  <td><span class="font-semibold">BV processing delays</span><br><span class="text-xs text-muted">Benefits verification taking >10 business days</span></td>
+                  <td><span style="font-weight:700;">84</span> <span class="text-xs text-muted">(16%)</span></td>
+                  <td><span class="inline-trend trend-up">&#9650; 18%</span></td>
+                  <td>UHC (41%)</td>
+                  <td><span class="tag tag-gray">72% HCP</span></td>
+                  <td><span class="tag tag-blue">88% Enrolled</span></td>
+                  <td>
+                    <div class="progress-bar" style="width: 60px; display: inline-block; vertical-align: middle;"><div class="fill" style="width: 85%; background: var(--success);"></div></div>
+                    <span class="text-xs" style="margin-left: 4px;">85%</span>
+                  </td>
+                  <td><span class="text-muted" style="font-size:16px;">&#8250;</span></td>
+                </tr>
+                <tr style="cursor:pointer;">
+                  <td><span class="font-semibold">Coverage status communication</span><br><span class="text-xs text-muted">Patients unsure of coverage outcome, delays in status updates</span></td>
+                  <td><span style="font-weight:700;">48</span> <span class="text-xs text-muted">(9%)</span></td>
+                  <td><span class="inline-trend" style="color: var(--text-secondary);">&#8212; Flat</span></td>
+                  <td>BCBS (29%)</td>
+                  <td><span class="tag tag-gray">81% Patient</span></td>
+                  <td><span class="tag tag-blue">93% Enrolled</span></td>
+                  <td>
+                    <div class="progress-bar" style="width: 60px; display: inline-block; vertical-align: middle;"><div class="fill" style="width: 78%; background: var(--warning);"></div></div>
+                    <span class="text-xs" style="margin-left: 4px;">78%</span>
+                  </td>
+                  <td><span class="text-muted" style="font-size:16px;">&#8250;</span></td>
+                </tr>
+                <tr style="cursor:pointer;">
+                  <td><span class="font-semibold">Appeals process guidance</span><br><span class="text-xs text-muted">How to appeal, what documentation needed, timelines</span></td>
+                  <td><span style="font-weight:700;">31</span> <span class="text-xs text-muted">(6%)</span></td>
+                  <td><span class="inline-trend trend-up">&#9650; 14%</span></td>
+                  <td>Cigna (35%)</td>
+                  <td><span class="tag tag-gray">54% HCP</span></td>
+                  <td><span class="tag tag-blue">97% Enrolled</span></td>
+                  <td>
+                    <div class="progress-bar" style="width: 60px; display: inline-block; vertical-align: middle;"><div class="fill" style="width: 82%; background: var(--success);"></div></div>
+                    <span class="text-xs" style="margin-left: 4px;">82%</span>
+                  </td>
+                  <td><span class="text-muted" style="font-size:16px;">&#8250;</span></td>
+                </tr>
+                <tr style="cursor:pointer;">
+                  <td><span class="font-semibold">Interim care eligibility questions</span><br><span class="text-xs text-muted">Patients asking about free VELSIPITY during PA delays</span></td>
+                  <td><span style="font-weight:700;">14</span> <span class="text-xs text-muted">(3%)</span></td>
+                  <td><span class="inline-trend trend-up">&#9650; 33%</span></td>
+                  <td>Multiple</td>
+                  <td><span class="tag tag-gray">90% Patient</span></td>
+                  <td><span class="tag tag-blue">86% Enrolled</span></td>
+                  <td>
+                    <div class="progress-bar" style="width: 60px; display: inline-block; vertical-align: middle;"><div class="fill" style="width: 74%; background: var(--warning);"></div></div>
+                    <span class="text-xs" style="margin-left: 4px;">74%</span>
+                  </td>
+                  <td><span class="text-muted" style="font-size:16px;">&#8250;</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Theme frequency chart -->
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3>Theme Frequency Over Time — Reimbursement Support</h3>
+          </div>
+          <div class="card-body">
+            <div class="chart-container" style="height: 280px;"><canvas id="themeFreqChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 3: ISSUE ALERT FEED ==================== -->
+    <div id="screen-alerts" class="screen">
+      <div class="content">
+        <div class="filter-bar">
+          <label>Severity</label>
+          <select>
+            <option value="all">All</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Status</label>
+          <select>
+            <option value="all">All</option>
+            <option selected>Unacknowledged</option>
+            <option>Investigating</option>
+            <option>Resolved</option>
+            <option>Dismissed</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Journey Stage</label>
+          <select>
+            <option value="all">All Stages</option>
+            <option>Program Initiation</option>
+            <option>Pre-Initiation Support</option>
+            <option>Reimbursement Support</option>
+            <option>Starting Therapy</option>
+          </select>
+        </div>
+
+        <!-- Active alerts summary -->
+        <div class="grid grid-4 mb-6">
+          <div class="card stat-card">
+            <div class="stat-label" style="color: var(--danger);">&#9679; High Severity</div>
+            <div class="stat-value">2</div>
+            <div class="text-xs text-muted" style="margin-top: 4px;">Requires immediate review</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label" style="color: var(--warning);">&#9679; Medium Severity</div>
+            <div class="stat-value">5</div>
+            <div class="text-xs text-muted" style="margin-top: 4px;">Review within 3 business days</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label" style="color: var(--success);">&#9679; Low Severity</div>
+            <div class="stat-value">3</div>
+            <div class="text-xs text-muted" style="margin-top: 4px;">Informational — monitor</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Median Time to Acknowledge</div>
+            <div class="stat-value">1.4d</div>
+            <div class="text-xs text-muted" style="margin-top: 4px;">Target: ≤2 business days</div>
+          </div>
+        </div>
+
+        <!-- Alert feed -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Alert Feed</h3>
+            <span class="text-xs text-muted">Showing 10 most recent</span>
+          </div>
+          <div style="padding: 0;">
+            <div class="alert-item unread" onclick="openAlertDetail('cigna-pa')">
+              <div class="alert-header">
+                <span class="severity severity-high"><span class="severity-dot"></span> HIGH</span>
+                <span class="alert-title">Cigna PA Denial Rate Spike — New Step Therapy Requirement</span>
+                <span class="alert-time">2h ago</span>
+              </div>
+              <div class="alert-desc">PA denials from Cigna increased 41% over the past 14 days. Root cause appears to be a new step therapy requirement for etrasimod effective April 15. Affecting both new PA submissions and renewals. 56 patients currently impacted.</div>
+              <div class="alert-tags">
+                <span class="tag tag-yellow">Reimbursement</span>
+                <span class="tag tag-red">Cigna</span>
+                <span class="tag tag-gray">41% increase</span>
+                <span class="tag tag-blue">56 patients</span>
+              </div>
+            </div>
+
+            <div class="alert-item unread">
+              <div class="alert-header">
+                <span class="severity severity-high"><span class="severity-dot"></span> HIGH</span>
+                <span class="alert-title">At-Home Testing Confusion Surge — Rhode Island</span>
+                <span class="alert-time">6h ago</span>
+              </div>
+              <div class="alert-desc">Calls from RI patients/offices about at-home baseline assessment eligibility increased 65% this week. Multiple callers report being told conflicting information about state-specific restrictions. 23 interactions flagged in 5 days.</div>
+              <div class="alert-tags">
+                <span class="tag tag-purple">Pre-Initiation</span>
+                <span class="tag tag-gray">RI state restriction</span>
+                <span class="tag tag-gray">65% increase</span>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-header">
+                <span class="severity severity-medium"><span class="severity-dot"></span> MEDIUM</span>
+                <span class="alert-title">Copay Card Activation Failures — Pharmacy System Issue</span>
+                <span class="alert-time">1d ago</span>
+              </div>
+              <div class="alert-desc">16 patients reported copay card not processing at specialty pharmacy over the past week. Pattern suggests a BIN/PCN configuration issue with 2 SP locations. Patients being charged full copay.</div>
+              <div class="alert-tags">
+                <span class="tag tag-green">Starting Therapy</span>
+                <span class="tag tag-gray">Copay Savings</span>
+                <span class="tag tag-gray">16 patients</span>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-header">
+                <span class="severity severity-medium"><span class="severity-dot"></span> MEDIUM</span>
+                <span class="alert-title">SP Shipment Delays — Northeast Region</span>
+                <span class="alert-time">1d ago</span>
+              </div>
+              <div class="alert-desc">Patients in NY, NJ, CT reporting 5-7 day shipment delays from specialty pharmacy (normally 2-3 days). 12 calls in past week. Possible distribution center issue.</div>
+              <div class="alert-tags">
+                <span class="tag tag-green">Starting Therapy</span>
+                <span class="tag tag-gray">Specialty Pharmacy</span>
+                <span class="tag tag-gray">Northeast</span>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-header">
+                <span class="severity severity-medium"><span class="severity-dot"></span> MEDIUM</span>
+                <span class="alert-title">UHC Benefits Verification Delays Increasing</span>
+                <span class="alert-time">2d ago</span>
+              </div>
+              <div class="alert-desc">Average BV processing time for UnitedHealthcare plans increased from 5 to 12 business days. 34 patients in queue >10 days. HCP offices calling for status updates at 2x normal rate.</div>
+              <div class="alert-tags">
+                <span class="tag tag-yellow">Reimbursement</span>
+                <span class="tag tag-gray">UnitedHealthcare</span>
+                <span class="tag tag-gray">34 patients</span>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-header">
+                <span class="severity severity-medium"><span class="severity-dot"></span> MEDIUM</span>
+                <span class="alert-title">"Request a DCC" Volume Increase — Non-Enrolled</span>
+                <span class="alert-time">3d ago</span>
+              </div>
+              <div class="alert-desc">Non-enrolled "Request a DCC" interactions increased 22% month-over-month. Top themes: insurance coverage questions (34%), program eligibility (28%), at-home testing availability (19%). May indicate unmet demand or awareness gap.</div>
+              <div class="alert-tags">
+                <span class="tag tag-blue">Initiation</span>
+                <span class="tag tag-gray">Non-Enrolled</span>
+                <span class="tag tag-gray">22% increase</span>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-header">
+                <span class="severity severity-medium"><span class="severity-dot"></span> MEDIUM</span>
+                <span class="alert-title">BCBS Plan-Level PA Variation Causing Confusion</span>
+                <span class="alert-time">4d ago</span>
+              </div>
+              <div class="alert-desc">HCP offices reporting inconsistent PA requirements across different BCBS plan types (PPO vs. HMO vs. EPO). 28 calls in past 2 weeks where DCC had to clarify plan-specific criteria.</div>
+              <div class="alert-tags">
+                <span class="tag tag-yellow">Reimbursement</span>
+                <span class="tag tag-gray">BCBS</span>
+                <span class="tag tag-gray">PA variation</span>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-header">
+                <span class="severity severity-low"><span class="severity-dot"></span> LOW</span>
+                <span class="alert-title">Voucher Program Eligibility Questions Increasing</span>
+                <span class="alert-time">5d ago</span>
+              </div>
+              <div class="alert-desc">8% increase in calls asking about Voucher program eligibility criteria, specifically around "new to VELSIPITY" and baseline assessment completion requirements.</div>
+              <div class="alert-tags">
+                <span class="tag tag-green">Starting Therapy</span>
+                <span class="tag tag-gray">Voucher</span>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-header">
+                <span class="severity severity-low"><span class="severity-dot"></span> LOW</span>
+                <span class="alert-title">E-Prescribe Enrollment Form Errors</span>
+                <span class="alert-time">6d ago</span>
+              </div>
+              <div class="alert-desc">5 HCP offices reported e-prescribe enrollment form submission errors in the past week. Missing required fields not flagged before submission. Generating follow-up DCC outbound calls for missing info.</div>
+              <div class="alert-tags">
+                <span class="tag tag-blue">Initiation</span>
+                <span class="tag tag-gray">E-prescribe</span>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-header">
+                <span class="severity severity-low"><span class="severity-dot"></span> LOW</span>
+                <span class="alert-title">ECG Coordination Delays — In-Office Scheduling</span>
+                <span class="alert-time">1w ago</span>
+              </div>
+              <div class="alert-desc">Slight uptick in calls about ECG scheduling for in-office baseline assessments. 6 offices report 2+ week wait times for ECG appointments. Monitoring for trend.</div>
+              <div class="alert-tags">
+                <span class="tag tag-purple">Pre-Initiation</span>
+                <span class="tag tag-gray">ECG</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 4: PAYER INTELLIGENCE ==================== -->
+    <div id="screen-payer" class="screen">
+      <div class="content">
+        <div class="filter-bar">
+          <label>Payer</label>
+          <select id="payer-filter-payer">
+            <option value="all">All Payers</option>
+            <option selected>Cigna</option>
+            <option>UnitedHealthcare</option>
+            <option>Aetna</option>
+            <option>Blue Cross Blue Shield</option>
+            <option>Humana</option>
+            <option>CVS Caremark</option>
+            <option>Express Scripts</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Issue Type</label>
+          <select>
+            <option value="all">All Issues</option>
+            <option>PA Requirements</option>
+            <option>Denials</option>
+            <option>Appeals</option>
+            <option>BV Delays</option>
+            <option>Coverage Gaps</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Period</label>
+          <select>
+            <option>Last 7 Days</option>
+            <option selected>Last 30 Days</option>
+            <option>Last 90 Days</option>
+          </select>
+        </div>
+
+        <!-- Payer KPIs -->
+        <div class="grid grid-4 mb-6">
+          <div class="card stat-card">
+            <div class="stat-label">Cigna — Total Issues</div>
+            <div class="stat-value">142</div>
+            <div class="stat-change up"><span class="trend-arrow">&#9650;</span> 41% vs prior 30 days</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Issue Rate (per 100 calls)</div>
+            <div class="stat-value">18.3</div>
+            <div class="stat-change up"><span class="trend-arrow">&#9650;</span> from 13.0 prior period</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">PA Denial Rate</div>
+            <div class="stat-value">34%</div>
+            <div class="stat-change up"><span class="trend-arrow">&#9650;</span> from 24% prior period</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Avg Days to PA Decision</div>
+            <div class="stat-value">11.2</div>
+            <div class="stat-change up"><span class="trend-arrow">&#9650;</span> from 7.8 prior period</div>
+          </div>
+        </div>
+
+        <!-- Payer issue breakdown chart + heatmap -->
+        <div class="grid grid-1-1 mb-6">
+          <div class="card">
+            <div class="card-header">
+              <h3>Cigna Issue Breakdown</h3>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 280px;"><canvas id="payerBreakdownChart"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Cigna Issue Trend (Weekly)</h3>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 280px;"><canvas id="payerTrendChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- All-payer heatmap -->
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3>Payer Issue Heatmap — Rate per 100 Interactions</h3>
+            <span class="text-xs text-muted">Darker = higher issue rate</span>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 160px;">Payer</th>
+                  <th>PA Requirements</th>
+                  <th>PA Denials</th>
+                  <th>BV Delays</th>
+                  <th>Appeals</th>
+                  <th>Coverage Gaps</th>
+                  <th>SP Issues</th>
+                  <th>Total Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="font-weight: 600;">Cigna</td>
+                  <td><span class="heatmap-cell" style="background: #fca5a5; display: inline-block;">7.2</span></td>
+                  <td><span class="heatmap-cell" style="background: #ef4444; color: white; display: inline-block;">5.8</span></td>
+                  <td><span class="heatmap-cell" style="background: #fde68a; display: inline-block;">2.1</span></td>
+                  <td><span class="heatmap-cell" style="background: #fca5a5; display: inline-block;">2.4</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">0.5</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">0.3</span></td>
+                  <td style="font-weight: 700;">18.3</td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 600;">UnitedHealthcare</td>
+                  <td><span class="heatmap-cell" style="background: #fde68a; display: inline-block;">3.1</span></td>
+                  <td><span class="heatmap-cell" style="background: #fde68a; display: inline-block;">2.4</span></td>
+                  <td><span class="heatmap-cell" style="background: #fca5a5; display: inline-block;">5.2</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.6</span></td>
+                  <td><span class="heatmap-cell" style="background: #fde68a; display: inline-block;">1.8</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">0.6</span></td>
+                  <td style="font-weight: 700;">14.7</td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 600;">BCBS (various)</td>
+                  <td><span class="heatmap-cell" style="background: #fca5a5; display: inline-block;">4.3</span></td>
+                  <td><span class="heatmap-cell" style="background: #fde68a; display: inline-block;">2.8</span></td>
+                  <td><span class="heatmap-cell" style="background: #fde68a; display: inline-block;">2.0</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.2</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.1</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">0.7</span></td>
+                  <td style="font-weight: 700;">12.1</td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 600;">Aetna</td>
+                  <td><span class="heatmap-cell" style="background: #fde68a; display: inline-block;">3.8</span></td>
+                  <td><span class="heatmap-cell" style="background: #fde68a; display: inline-block;">2.2</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.5</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.4</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.3</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.0</span></td>
+                  <td style="font-weight: 700;">11.2</td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 600;">Humana</td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">2.4</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.6</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.2</span></td>
+                  <td><span class="heatmap-cell" style="background: #d1fae5; display: inline-block;">0.8</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.8</span></td>
+                  <td><span class="heatmap-cell" style="background: #d1fae5; display: inline-block;">0.8</span></td>
+                  <td style="font-weight: 700;">8.6</td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 600;">Express Scripts</td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.9</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.4</span></td>
+                  <td><span class="heatmap-cell" style="background: #d1fae5; display: inline-block;">0.9</span></td>
+                  <td><span class="heatmap-cell" style="background: #d1fae5; display: inline-block;">0.6</span></td>
+                  <td><span class="heatmap-cell" style="background: #d1fae5; display: inline-block;">0.8</span></td>
+                  <td><span class="heatmap-cell" style="background: #fef3c7; display: inline-block;">1.4</span></td>
+                  <td style="font-weight: 700;">7.0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Evidence section for selected payer -->
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3>Cigna — Key Evidence &amp; Context</h3>
+            <span class="text-xs text-muted">Aggregated from 142 interactions</span>
+          </div>
+          <div class="card-body">
+            <div class="evidence-box" style="margin-bottom: 12px;">
+              <div class="evidence-label">Aggregated Pattern — PA Step Therapy</div>
+              Across 83 Cigna PA-related interactions this period, 68% referenced a new step therapy requirement for etrasimod effective April 15, 2026. HCP offices report being asked to document failure on a TNF inhibitor before Cigna will approve VELSIPITY, which was not previously required. This is generating both new denials and PA renewal failures.
+            </div>
+            <div class="evidence-box" style="margin-bottom: 12px;">
+              <div class="evidence-label">Aggregated Pattern — Appeal Volume</div>
+              Appeals-related calls for Cigna increased from 8 to 19 in the past 14 days. HCP offices are asking for appeal letter templates and documentation guidance specific to the new step therapy criterion. 3 offices reported submitting peer-to-peer review requests.
+            </div>
+            <div class="evidence-box">
+              <div class="evidence-label">Suggested Action</div>
+              Consider updating Cigna-specific business rules to proactively initiate interim care enrollment for patients with pending Cigna PAs. Alert FRM team to engage Cigna representatives regarding the new step therapy policy. Update DCC talking points for Cigna-specific PA guidance.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 5: FINANCIAL PROGRAMS ==================== -->
+    <div id="screen-financial" class="screen">
+      <div class="content">
+        <div class="filter-bar">
+          <label>Program</label>
+          <select>
+            <option value="all" selected>All Programs</option>
+            <option>Copay Savings</option>
+            <option>Voucher</option>
+            <option>Interim Care Rx</option>
+            <option>OOP Reimbursement</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Period</label>
+          <select>
+            <option>Last 7 Days</option>
+            <option selected>Last 30 Days</option>
+            <option>Last 90 Days</option>
+          </select>
+          <div class="filter-divider"></div>
+          <label>Audience</label>
+          <select>
+            <option value="all">All</option>
+            <option>Patient/Caregiver</option>
+            <option>HCP/Office Staff</option>
+          </select>
+        </div>
+
+        <!-- Financial program cards -->
+        <div class="grid grid-2 mb-6">
+          <div class="card fin-program-card copay">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <div>
+                <div class="font-semibold" style="font-size: 15px;">Copay Savings Program</div>
+                <div class="text-xs text-muted">Smart Card, $16K annual max, commercially insured</div>
+              </div>
+              <span class="tag tag-red">&#9650; 24%</span>
+            </div>
+            <div style="display: flex; gap: 24px; margin-bottom: 12px;">
+              <div>
+                <div class="text-xs text-muted">Total Mentions</div>
+                <div style="font-size: 22px; font-weight: 700;">347</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Issue Calls</div>
+                <div style="font-size: 22px; font-weight: 700;">89</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Issue Rate</div>
+                <div style="font-size: 22px; font-weight: 700;">25.6%</div>
+              </div>
+            </div>
+            <div class="text-sm"><strong>Top issues:</strong> Card activation failures (36%), pharmacy not accepting card (28%), annual max questions (18%), card replacement requests (12%), copay amount confusion (6%)</div>
+          </div>
+
+          <div class="card fin-program-card voucher">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <div>
+                <div class="font-semibold" style="font-size: 15px;">Voucher Program</div>
+                <div class="text-xs text-muted">Free 30-day supply, new patients, completed baseline</div>
+              </div>
+              <span class="tag tag-yellow">&#9650; 8%</span>
+            </div>
+            <div style="display: flex; gap: 24px; margin-bottom: 12px;">
+              <div>
+                <div class="text-xs text-muted">Total Mentions</div>
+                <div style="font-size: 22px; font-weight: 700;">218</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Issue Calls</div>
+                <div style="font-size: 22px; font-weight: 700;">42</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Issue Rate</div>
+                <div style="font-size: 22px; font-weight: 700;">19.3%</div>
+              </div>
+            </div>
+            <div class="text-sm"><strong>Top issues:</strong> Eligibility confusion — "new to VELSIPITY" definition (38%), baseline assessment completion requirement (29%), pharmacy redemption process (19%), voucher expiration questions (14%)</div>
+          </div>
+
+          <div class="card fin-program-card interim">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <div>
+                <div class="font-semibold" style="font-size: 15px;">Interim Care Rx</div>
+                <div class="text-xs text-muted">Up to 2 years free VELSIPITY during PA/coverage delays</div>
+              </div>
+              <span class="tag tag-red">&#9650; 33%</span>
+            </div>
+            <div style="display: flex; gap: 24px; margin-bottom: 12px;">
+              <div>
+                <div class="text-xs text-muted">Total Mentions</div>
+                <div style="font-size: 22px; font-weight: 700;">156</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Issue Calls</div>
+                <div style="font-size: 22px; font-weight: 700;">47</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Issue Rate</div>
+                <div style="font-size: 22px; font-weight: 700;">30.1%</div>
+              </div>
+            </div>
+            <div class="text-sm"><strong>Top issues:</strong> Eligibility questions during PA delays (40%), enrollment process confusion (26%), duration/renewal questions (19%), transition to commercial coverage (15%)</div>
+            <div class="text-xs" style="margin-top: 8px; color: var(--danger);"><strong>Note:</strong> 33% increase correlated with Cigna PA denial spike — patients redirecting to Interim Care</div>
+          </div>
+
+          <div class="card fin-program-card oop">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <div>
+                <div class="font-semibold" style="font-size: 15px;">OOP Reimbursement</div>
+                <div class="text-xs text-muted">Up to $2,500 for qualified baseline assessment expenses</div>
+              </div>
+              <span class="tag tag-gray">&#8212; Flat</span>
+            </div>
+            <div style="display: flex; gap: 24px; margin-bottom: 12px;">
+              <div>
+                <div class="text-xs text-muted">Total Mentions</div>
+                <div style="font-size: 22px; font-weight: 700;">94</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Issue Calls</div>
+                <div style="font-size: 22px; font-weight: 700;">18</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Issue Rate</div>
+                <div style="font-size: 22px; font-weight: 700;">19.1%</div>
+              </div>
+            </div>
+            <div class="text-sm"><strong>Top issues:</strong> Eligibility — state/federal insurance exclusion (39%), documentation/receipt requirements (33%), reimbursement timeline questions (17%), max amount clarification (11%)</div>
+          </div>
+        </div>
+
+        <!-- Financial program charts -->
+        <div class="grid grid-1-1 mb-6">
+          <div class="card">
+            <div class="card-header">
+              <h3>Discussion Volume by Program</h3>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 280px;"><canvas id="finVolumeChart"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Issue Rate Trend by Program</h3>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 280px;"><canvas id="finTrendChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- State restriction impact -->
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3>State Restriction Impact on Financial Programs</h3>
+            <span class="text-xs text-muted">MA, MI, MN, RI — restricted states</span>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <table>
+              <thead>
+                <tr>
+                  <th>State</th>
+                  <th>Total Financial Pgm Calls</th>
+                  <th>Issue Rate</th>
+                  <th>Top Issue</th>
+                  <th>Restriction-Related %</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="font-weight: 600;">Rhode Island</td>
+                  <td>34</td>
+                  <td>41.2%</td>
+                  <td>At-home testing ineligibility confusion</td>
+                  <td><span class="tag tag-red">72%</span></td>
+                  <td><span class="inline-trend trend-up">&#9650; 65%</span></td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 600;">Massachusetts</td>
+                  <td>48</td>
+                  <td>33.3%</td>
+                  <td>OOP reimbursement eligibility questions</td>
+                  <td><span class="tag tag-yellow">58%</span></td>
+                  <td><span class="inline-trend trend-up">&#9650; 12%</span></td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 600;">Michigan</td>
+                  <td>29</td>
+                  <td>27.6%</td>
+                  <td>Program eligibility clarification</td>
+                  <td><span class="tag tag-yellow">45%</span></td>
+                  <td><span class="inline-trend" style="color: var(--text-secondary);">&#8212; Flat</span></td>
+                </tr>
+                <tr>
+                  <td style="font-weight: 600;">Minnesota</td>
+                  <td>22</td>
+                  <td>22.7%</td>
+                  <td>In-office testing availability</td>
+                  <td><span class="tag tag-gray">36%</span></td>
+                  <td><span class="inline-trend trend-down">&#9660; 8%</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ==================== THEME DETAIL MODAL ==================== -->
+<div class="modal-overlay" id="themeDetailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modal-theme-title">PA Denial Patterns — Cigna Step Therapy</h2>
+        <div class="text-sm text-muted" style="margin-top: 4px;">
+          <span class="journey-pill journey-reimbursement" style="font-size: 11px; padding: 2px 8px;">Reimbursement Support</span>
+          <span style="margin-left: 8px;">127 occurrences | Last 30 days</span>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Stats -->
+      <div class="grid grid-4 mb-6">
+        <div>
+          <div class="text-xs text-muted">Frequency</div>
+          <div style="font-size: 24px; font-weight: 700;">127</div>
+          <div class="text-xs"><span class="trend-up">&#9650; 41%</span> vs prior</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">Confidence</div>
+          <div style="font-size: 24px; font-weight: 700;">89%</div>
+          <div class="text-xs text-muted">High confidence</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">Top Payer</div>
+          <div style="font-size: 24px; font-weight: 700;">Cigna</div>
+          <div class="text-xs text-muted">44% of occurrences</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">Repeat Contact Rate</div>
+          <div style="font-size: 24px; font-weight: 700;">28%</div>
+          <div class="text-xs"><span class="trend-up">&#9650; 9%</span> vs baseline</div>
+        </div>
+      </div>
+
+      <!-- Breakdown -->
+      <div class="grid grid-2 mb-6">
+        <div>
+          <div class="font-semibold mb-2">Payer Breakdown</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="width: 80px; font-size: 12px;">Cigna</span>
+              <div class="progress-bar" style="flex: 1;"><div class="fill" style="width: 44%; background: var(--danger);"></div></div>
+              <span class="text-xs">44%</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="width: 80px; font-size: 12px;">UHC</span>
+              <div class="progress-bar" style="flex: 1;"><div class="fill" style="width: 22%; background: var(--warning);"></div></div>
+              <span class="text-xs">22%</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="width: 80px; font-size: 12px;">BCBS</span>
+              <div class="progress-bar" style="flex: 1;"><div class="fill" style="width: 18%; background: var(--warning);"></div></div>
+              <span class="text-xs">18%</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="width: 80px; font-size: 12px;">Aetna</span>
+              <div class="progress-bar" style="flex: 1;"><div class="fill" style="width: 10%; background: #94a3b8;"></div></div>
+              <span class="text-xs">10%</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="width: 80px; font-size: 12px;">Other</span>
+              <div class="progress-bar" style="flex: 1;"><div class="fill" style="width: 6%; background: #cbd5e1;"></div></div>
+              <span class="text-xs">6%</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="font-semibold mb-2">Audience &amp; Enrollment</div>
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>HCP/Office Staff</span>
+              <span class="font-semibold">58%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Patient/Caregiver</span>
+              <span class="font-semibold">42%</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); padding-top: 10px; display: flex; justify-content: space-between;">
+              <span>Enrolled PSP</span>
+              <span class="font-semibold">95%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Non-Enrolled</span>
+              <span class="font-semibold">5%</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); padding-top: 10px; display: flex; justify-content: space-between;">
+              <span>Inbound</span>
+              <span class="font-semibold">64%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Outbound</span>
+              <span class="font-semibold">36%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related keywords -->
+      <div class="mb-6">
+        <div class="font-semibold mb-2">Related Keywords (Top 10)</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="tag tag-blue">prior authorization</span>
+          <span class="tag tag-blue">step therapy</span>
+          <span class="tag tag-blue">denial</span>
+          <span class="tag tag-blue">Cigna</span>
+          <span class="tag tag-blue">TNF inhibitor</span>
+          <span class="tag tag-blue">appeal</span>
+          <span class="tag tag-blue">PA criteria</span>
+          <span class="tag tag-blue">etrasimod</span>
+          <span class="tag tag-blue">coverage denied</span>
+          <span class="tag tag-blue">peer-to-peer</span>
+        </div>
+      </div>
+
+      <!-- Evidence -->
+      <div class="mb-6">
+        <div class="font-semibold mb-2">Supporting Evidence (Aggregated)</div>
+        <div class="evidence-box" style="margin-bottom: 10px;">
+          <div class="evidence-label">Pattern — New Step Therapy Criterion</div>
+          68% of Cigna PA denial calls this period reference a new requirement to document failure on a TNF inhibitor (e.g., Humira, Remicade) before Cigna will approve VELSIPITY. This criterion was not part of Cigna's prior PA policy for etrasimod. Both new submissions and renewals are affected.
+        </div>
+        <div class="evidence-box" style="margin-bottom: 10px;">
+          <div class="evidence-label">Pattern — HCP Office Confusion</div>
+          HCP offices report receiving denial letters citing "step therapy not met" without clear guidance on which specific agents and duration qualify. 14 offices called DCC seeking documentation templates. 3 requested peer-to-peer review scheduling.
+        </div>
+        <div class="evidence-box">
+          <div class="evidence-label">Pattern — Patient Impact</div>
+          Patients with pending/denied Cigna PAs are asking about interim care options at 2.4x the rate of other payers. 28% of impacted patients have called back within 14 days (repeat contact). Average time in PA limbo: 16 days (up from 9 days prior period).
+        </div>
+      </div>
+
+      <!-- Related themes -->
+      <div>
+        <div class="font-semibold mb-2">Related Themes</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <div style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; cursor: pointer;" class="tag tag-yellow">Appeals process guidance (31 occ.)</div>
+          <div style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; cursor: pointer;" class="tag tag-green">Interim care eligibility (14 occ.)</div>
+          <div style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; cursor: pointer;" class="tag tag-blue">PA requirement questions (219 occ.)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ALERT DETAIL MODAL ==================== -->
+<div class="modal-overlay" id="alertDetailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+          <span class="severity severity-high"><span class="severity-dot"></span> HIGH SEVERITY</span>
+          <span class="text-xs text-muted">Alert #A-2026-0423</span>
+        </div>
+        <h2>Cigna PA Denial Rate Spike — New Step Therapy Requirement</h2>
+      </div>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid grid-4 mb-6">
+        <div>
+          <div class="text-xs text-muted">Detected</div>
+          <div class="font-semibold">Apr 25, 2026 9:18 AM</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">Magnitude</div>
+          <div class="font-semibold" style="color: var(--danger);">+41% denial rate</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">Patients Impacted</div>
+          <div class="font-semibold">56</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted">Status</div>
+          <div><span class="tag tag-yellow">Unacknowledged</span></div>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <div class="font-semibold mb-2">What Was Detected</div>
+        <p class="text-sm" style="line-height: 1.7;">PA denials from Cigna for etrasimod (VELSIPITY) increased 41% over the trailing 14 days compared to the prior 14-day period. The spike began approximately April 15, 2026. Analysis of 83 Cigna PA-related interactions identified a new step therapy requirement as the primary driver — Cigna now requires documented failure on a TNF inhibitor before approving etrasimod. This requirement affects both new PA submissions and renewals.</p>
+      </div>
+
+      <div class="mb-6">
+        <div class="font-semibold mb-2">Supporting Evidence</div>
+        <div class="evidence-box" style="margin-bottom: 10px;">
+          <div class="evidence-label">Denial Pattern</div>
+          56 of 83 Cigna PA interactions (67%) this period involved a denial or pending denial citing "step therapy not met." Prior period: 23 of 71 (32%). The denial language specifically references TNF inhibitor documentation.
+        </div>
+        <div class="evidence-box" style="margin-bottom: 10px;">
+          <div class="evidence-label">HCP Office Impact</div>
+          14 unique HCP offices called DCC seeking updated Cigna PA criteria guidance. 3 offices requested peer-to-peer review scheduling. Offices report receiving denial letters without clear guidance on qualifying step therapy agents and duration.
+        </div>
+        <div class="evidence-box">
+          <div class="evidence-label">Patient Downstream Effect</div>
+          Interim Care Rx inquiries from Cigna patients increased 2.4x. Repeat-contact rate for Cigna PA issues: 28% (vs. 19% baseline). Average days in PA limbo: 16 (vs. 9 prior).
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <div class="font-semibold mb-2">Breakdown</div>
+        <div class="grid grid-3" style="gap: 12px;">
+          <div style="padding: 12px; background: #f8fafc; border-radius: 6px;">
+            <div class="text-xs text-muted">Journey Stage</div>
+            <div class="journey-pill journey-reimbursement" style="margin-top: 4px;">Reimbursement Support</div>
+          </div>
+          <div style="padding: 12px; background: #f8fafc; border-radius: 6px;">
+            <div class="text-xs text-muted">Audience Split</div>
+            <div class="text-sm" style="margin-top: 4px;">58% HCP | 42% Patient</div>
+          </div>
+          <div style="padding: 12px; background: #f8fafc; border-radius: 6px;">
+            <div class="text-xs text-muted">Call Direction</div>
+            <div class="text-sm" style="margin-top: 4px;">64% Inbound | 36% Outbound</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <div class="font-semibold mb-2">Suggested Program-Level Response</div>
+        <div style="background: var(--primary-light); border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.7;">
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 8px;">
+            <li><strong>Update Cigna-specific business rules</strong> — proactively initiate Interim Care Rx enrollment for patients with pending Cigna PAs to prevent therapy delays</li>
+            <li><strong>Alert FRM team</strong> — engage Cigna representatives regarding the new step therapy policy and timeline for resolution</li>
+            <li><strong>Update DCC guidance</strong> — provide Cigna-specific PA talking points including step therapy documentation requirements and appeal letter templates</li>
+            <li><strong>Monitor weekly</strong> — track denial rate, appeal success rate, and days-in-limbo for Cigna specifically until resolved</li>
+          </ol>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-primary" onclick="alert('Alert acknowledged. Status updated to Investigating.')">Acknowledge &amp; Investigate</button>
+        <button class="btn" onclick="alert('Alert dismissed with reason.')">Dismiss</button>
+        <button class="btn" onclick="alert('Alert assigned to team member.')">Assign</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Navigation
+function switchScreen(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  document.querySelector('.sidebar-item[data-screen="' + screen + '"]').classList.add('active');
+
+  const titles = {
+    dashboard: 'Program Insight Dashboard',
+    themes: 'Theme / Issue Detail',
+    alerts: 'Issue Alert Feed',
+    payer: 'Payer Intelligence',
+    financial: 'Financial Programs'
+  };
+  document.getElementById('page-title').textContent = titles[screen];
+  window.scrollTo(0, 0);
+}
+
+// Segment toggle
+function toggleSegment(btn) {
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// Modal
+function openThemeDetail(id) {
+  document.getElementById('themeDetailModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function openAlertDetail(id) {
+  document.getElementById('alertDetailModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+  document.body.style.overflow = '';
+}
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModal(); });
+});
+
+// Chart defaults
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = '#64748b';
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.pointStyleWidth = 8;
+Chart.defaults.plugins.legend.labels.boxHeight = 6;
+
+const weeks = ['W1 Mar', 'W2 Mar', 'W3 Mar', 'W4 Mar', 'W1 Apr', 'W2 Apr', 'W3 Apr', 'W4 Apr'];
+
+// Dashboard trend chart
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels: weeks,
+    datasets: [
+      { label: 'Reimbursement', data: [98, 105, 112, 118, 126, 134, 152, 168], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)', fill: true, tension: 0.3 },
+      { label: 'Pre-Initiation', data: [82, 88, 91, 95, 99, 108, 112, 118], borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.08)', fill: true, tension: 0.3 },
+      { label: 'Initiation', data: [65, 68, 72, 70, 74, 78, 82, 80], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', fill: true, tension: 0.3 },
+      { label: 'Starting Therapy', data: [32, 35, 38, 36, 40, 42, 44, 48], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', fill: true, tension: 0.3 }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+});
+
+// Keyword chart
+new Chart(document.getElementById('keywordChart'), {
+  type: 'bar',
+  data: {
+    labels: ['prior auth', 'step therapy', 'copay card', 'denial', 'at-home test', 'appeal', 'interim care', 'BV delay', 'voucher', 'SP shipment'],
+    datasets: [
+      { label: 'This Period', data: [312, 187, 156, 142, 128, 94, 89, 84, 72, 48], backgroundColor: '#3b82f6' },
+      { label: '30-Day Avg', data: [245, 120, 132, 102, 105, 82, 67, 71, 68, 52], backgroundColor: '#e2e8f0' }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { position: 'bottom' } }, scales: { x: { grid: { color: '#f1f5f9' } }, y: { grid: { display: false } } } }
+});
+
+// Audience chart
+new Chart(document.getElementById('audienceChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Patient/Caregiver — Enrolled', 'Patient/Caregiver — Non-Enrolled', 'HCP/Office — Enrolled', 'HCP/Office — Non-Enrolled'],
+    datasets: [{
+      data: [1124, 218, 1288, 217],
+      backgroundColor: ['#3b82f6', '#93c5fd', '#f59e0b', '#fde68a'],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+});
+
+// Theme frequency chart
+new Chart(document.getElementById('themeFreqChart'), {
+  type: 'line',
+  data: {
+    labels: weeks,
+    datasets: [
+      { label: 'PA Requirements', data: [42, 45, 48, 50, 54, 58, 64, 72], borderColor: '#ef4444', tension: 0.3, borderWidth: 2 },
+      { label: 'PA Denials', data: [18, 20, 22, 24, 28, 32, 38, 46], borderColor: '#f59e0b', tension: 0.3, borderWidth: 2 },
+      { label: 'BV Delays', data: [16, 17, 18, 19, 20, 22, 24, 26], borderColor: '#3b82f6', tension: 0.3, borderWidth: 2 },
+      { label: 'Coverage Status', data: [10, 11, 10, 12, 12, 11, 13, 12], borderColor: '#8b5cf6', tension: 0.3, borderWidth: 2 },
+      { label: 'Appeals', data: [5, 6, 7, 6, 8, 8, 10, 12], borderColor: '#10b981', tension: 0.3, borderWidth: 2 }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+});
+
+// Payer breakdown chart (Cigna)
+new Chart(document.getElementById('payerBreakdownChart'), {
+  type: 'bar',
+  data: {
+    labels: ['PA Requirements', 'PA Denials', 'Appeals', 'BV Delays', 'Coverage Gaps', 'SP Issues'],
+    datasets: [{
+      data: [56, 45, 19, 16, 4, 2],
+      backgroundColor: ['#ef4444', '#f59e0b', '#8b5cf6', '#3b82f6', '#64748b', '#94a3b8']
+    }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+});
+
+// Payer trend chart (Cigna weekly)
+new Chart(document.getElementById('payerTrendChart'), {
+  type: 'line',
+  data: {
+    labels: weeks,
+    datasets: [
+      { label: 'Cigna Issues', data: [22, 24, 26, 28, 32, 36, 44, 52], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)', fill: true, tension: 0.3 },
+      { label: 'All-Payer Avg', data: [38, 40, 42, 44, 46, 48, 52, 54], borderColor: '#94a3b8', borderDash: [5, 5], tension: 0.3 }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+});
+
+// Financial volume chart
+new Chart(document.getElementById('finVolumeChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Copay Savings', 'Voucher', 'Interim Care Rx', 'OOP Reimburse'],
+    datasets: [
+      { label: 'Total Mentions', data: [347, 218, 156, 94], backgroundColor: '#3b82f6' },
+      { label: 'Issue Calls', data: [89, 42, 47, 18], backgroundColor: '#ef4444' }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+});
+
+// Financial trend chart
+new Chart(document.getElementById('finTrendChart'), {
+  type: 'line',
+  data: {
+    labels: weeks,
+    datasets: [
+      { label: 'Copay Savings', data: [18, 20, 21, 22, 23, 24, 26, 28], borderColor: '#2563eb', tension: 0.3, borderWidth: 2 },
+      { label: 'Interim Care', data: [15, 16, 17, 18, 20, 22, 26, 30], borderColor: '#f59e0b', tension: 0.3, borderWidth: 2 },
+      { label: 'Voucher', data: [14, 15, 16, 16, 17, 18, 19, 20], borderColor: '#8b5cf6', tension: 0.3, borderWidth: 2 },
+      { label: 'OOP Reimburse', data: [12, 12, 13, 13, 12, 13, 13, 14], borderColor: '#0d9488', tension: 0.3, borderWidth: 2 }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Issue Rate %' }, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+});
+</script>
+
+</body>
+</html>
